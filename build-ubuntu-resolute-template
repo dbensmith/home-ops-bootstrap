@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+
+# 1Password wrapper for build-ubuntu-resolute-template.sh.
+# Resolves secrets via op run --env-file, then launches the builder.
+#
+# Usage: ./build-ubuntu-resolute-template
+#
+# Prerequisites:
+#   - op CLI installed and authenticated (op signin OR OP_SERVICE_ACCOUNT_TOKEN)
+
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+TPL_FILE="$__dir/proxmox/build-ubuntu-resolute-template.env.tpl"
+SCRIPT_FILE="$__dir/proxmox/build-ubuntu-resolute-template.sh"
+
+# --- Pre-flight checks ---
+if ! command -v op &>/dev/null; then
+    echo "Error: 1Password CLI ('op') is not installed or not in PATH." >&2
+    echo "Install from: https://1password.com/downloads/command-line/" >&2
+    exit 1
+fi
+
+if ! op whoami &>/dev/null; then
+    _sa_ok="[ -n \"${OP_SERVICE_ACCOUNT_TOKEN:-}\" ]"
+    _connect_pair_ok="[ -n \"${OP_CONNECT_TOKEN_ENV:-}\" ] && [ -n \"${OP_CONNECT_HOST_ENV:-}\" ]"
+    _connect_local_ok="[ -n \"${OP_CONNECT_TOKEN:-}\" ] && [ -n \"${OP_CONNECT_HOST:-}\" ]"
+    if ! eval "$_sa_ok || $_connect_pair_ok || $_connect_local_ok"; then
+        echo "Error: No 1Password authentication available." >&2
+        if [[ "${CI:-}" == "true" ]]; then
+            echo "In CI, set: OP_SERVICE_ACCOUNT_TOKEN" >&2
+            echo "  or both: OP_CONNECT_HOST_ENV + OP_CONNECT_TOKEN_ENV" >&2
+        else
+            echo "For local dev, sign in first:  op signin" >&2
+            echo "Or set: OP_SERVICE_ACCOUNT_TOKEN" >&2
+            echo "  or both: OP_CONNECT_HOST + OP_CONNECT_TOKEN" >&2
+        fi
+        exit 1
+    fi
+fi
+
+if [[ ! -f "$TPL_FILE" ]]; then
+    echo "Error: env template not found: $TPL_FILE" >&2
+    exit 1
+fi
+
+if [[ ! -f "$SCRIPT_FILE" ]]; then
+    echo "Error: builder script not found: $SCRIPT_FILE" >&2
+    exit 1
+fi
+
+# --- Execute ---
+echo "Resolving secrets and building template..."
+op run --env-file="$TPL_FILE" -- "$SCRIPT_FILE" "$@"

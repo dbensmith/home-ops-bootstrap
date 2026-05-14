@@ -1,0 +1,18 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temp / working files
+/tmp/*.img
+/tmp/*.qcow2
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets (env files with resolved values — .tpl files are fine)
+.env
+*.env.local
