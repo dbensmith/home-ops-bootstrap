@@ -22,7 +22,7 @@ if [ "${1:-}" = "--fix" ]; then
 fi
 
 # Find shell scripts: .sh files + the entry point (no extension)
-mapfile -t SH_FILES < <(find . -type f \( -name '*.sh' -o -name 'build-ubuntu-resolute-template' \) -not -path './.git/*' -not -path './node_modules/*' -not -path './.bin/*' | sort)
+mapfile -t SH_FILES < <(find . -type f \( -name '*.sh' -o -name 'build-ubuntu-resolute-template' \) -not -path './.git/*' -not -path './node_modules/*' | sort)
 
 FAILURES=()
 
