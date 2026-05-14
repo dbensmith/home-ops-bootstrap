@@ -135,12 +135,33 @@ wget -N "$SRC_URL"
 echo "       Converting image to qcow2..."
 cp "$SRC_IMG" "$IMG_NAME"
 
+# Resize before customizing — apt-get upgrade needs room.
+# Cloud images ship with ~2GB root partition; upgrade + install can fill it.
+echo "       Resizing image to $DISK_SIZE..."
+qemu-img resize "$IMG_NAME" "$DISK_SIZE"
+
 # --- virt-customize: Customize Image In-Place ---
 echo "[2/7] Customizing image with virt-customize..."
 
+# Grow root partition to fill the expanded disk (must run before --update).
+# Uses sfdisk (util-linux, always available) — growpart needs cloud-guest-utils
+# which isn't installed yet.
+# Ubuntu cloud images use either /dev/vda1 or /dev/sda1.
+VC_GROW_ARG=""
+VC_GROW_ARG+="--run-command '"
+VC_GROW_ARG+="  for dev in vda sda; do"
+VC_GROW_ARG+="    [ -b /dev/\$dev ] || continue;"
+VC_GROW_ARG+="    echo \", +\" | sfdisk -N 1 --no-reread /dev/\$dev 2>/dev/null && break;"
+VC_GROW_ARG+="  done;"
+VC_GROW_ARG+="  partprobe /dev/vda 2>/dev/null || partprobe /dev/sda 2>/dev/null || true;"
+VC_GROW_ARG+="  resize2fs /dev/vda1 2>/dev/null || resize2fs /dev/sda1 2>/dev/null || true"
+VC_GROW_ARG+="' "
+
 if [ -n "${TZ:-}" ]; then
   echo "       Setting timezone to $TZ..."
-  virt-customize -a "$IMG_NAME" --timezone "$TZ"
+  eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG --timezone \"$TZ\""
+else
+  eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG"
 fi
 
 if [ "$SETX11" = "yes" ]; then
