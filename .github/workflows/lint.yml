@@ -1,31 +1,56 @@
+---
 name: Lint
 
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  lint:
+  build:
+    name: Lint
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          node-version: "20"
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Install npm dependencies
-        run: npm ci
+      - name: Load shared Super-Linter configuration
+        shell: bash
+        run: |
+          grep -vE '^\s*(#|$)' .github/super-linter.env >> "$GITHUB_ENV"
 
-      - uses: actions/setup-go@v5
+      - name: Restore Super-Linter caches
+        uses: actions/cache@v4
         with:
-          go-version: stable
+          path: ${{ runner.temp }}/_github_home/.cache
+          key: ${{ runner.os }}-super-linter-cache-${{ hashFiles('.github/super-linter.env', '.github/workflows/lint.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-super-linter-cache-
 
-      - name: Install shfmt
-        run: go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
-
-      - name: Run lint
-        run: npm run lint
+      - name: Super-linter
+        uses: super-linter/super-linter@v8.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+          SAVE_SUPER_LINTER_SUMMARY: true
+          FAIL_ON_INVALID_GITHUB_ACTIONS_EVENT_CONFIGURATION: true
+          MULTI_STATUS: true
