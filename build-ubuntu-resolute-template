@@ -63,8 +63,11 @@ if ! command -v virt-customize &>/dev/null; then
     echo "libguestfs-tools (virt-customize) not found — required to customize the cloud image."
     read -r -p "Install libguestfs-tools? [Y/n] " REPLY
     case "${REPLY:-Y}" in
-        y|Y|yes|YES|"") apt-get update && apt-get install -y libguestfs-tools ;;
-        *) echo "Aborting. Install manually: apt-get install libguestfs-tools" >&2; exit 1 ;;
+        y | Y | yes | YES | "") apt-get update && apt-get install -y libguestfs-tools ;;
+        *)
+            echo "Aborting. Install manually: apt-get install libguestfs-tools" >&2
+            exit 1
+            ;;
     esac
 fi
 

@@ -1,11 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# Run super-linter locally (check mode, no fix).
-# Same as CI — uses the same config (.github/super-linter.env).
-# Mirrors desktop-environment's bin/Invoke-SuperLinter.ps1.
+# Format all files using super-linter in fix mode (same as CI, local via docker/podman).
+# Mirrors desktop-environment's bin/Invoke-SuperLinter.ps1 -Fix.
 #
-# Usage: ./scripts/lint.sh
+# Usage: ./scripts/format.sh
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IMAGE="ghcr.io/super-linter/super-linter:v8.6.0"
@@ -25,9 +24,14 @@ fi
 echo "Pulling $IMAGE..."
 "$RUNTIME" pull "$IMAGE"
 
-echo "Running super-linter..."
+echo "Running super-linter in fix mode..."
 "$RUNTIME" run --rm \
     --env-file "$REPO_ROOT/.github/super-linter.env" \
     -e RUN_LOCAL=true \
+    -e FIX_JSON_PRETTIER=true \
+    -e FIX_JSONC_PRETTIER=true \
+    -e FIX_MARKDOWN=true \
+    -e FIX_MARKDOWN_PRETTIER=true \
+    -e FIX_YAML_PRETTIER=true \
     -v "$REPO_ROOT:/tmp/lint:rw" \
     "$IMAGE"

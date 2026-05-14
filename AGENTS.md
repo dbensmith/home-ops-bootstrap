@@ -45,8 +45,8 @@ home-ops-bootstrap/
 
 ### Git worktree isolation (parallel agent sessions)
 
-When multiple OpenCode sessions run concurrently against this repo, each session
-MUST use a separate git worktree to avoid filesystem collisions.
+Other OpenCode sessions may run against this repo at any time without your knowledge.
+Always use a separate git worktree to avoid filesystem collisions.
 
 **Session startup checklist:**
 
@@ -132,6 +132,36 @@ ALL commits use Conventional Commits format. Load caveman-commit skill before wr
 
 - `qemu-guest-agent`
 - `cloud-utils`, `cloud-guest-utils`
+
+## Linting
+
+Uses [super-linter](https://github.com/super-linter/super-linter) — same as CI. Mirrors desktop-environment pattern.
+
+### Linters enabled
+
+- **shellcheck** — bash static analysis (config: `.shellcheckrc`)
+- **shfmt** — bash formatting
+- **markdownlint** — markdown linting (config: `.markdownlint.jsonc`)
+- **prettier** — formatting for markdown, JSON, JSONC, YAML
+
+### Commands
+
+```bash
+./scripts/lint.sh      # Check mode (same as CI)
+./scripts/format.sh    # Auto-fix mode
+```
+
+Both run super-linter locally via docker or podman. CI runs the same container.
+
+### Config files
+
+| File                         | Purpose                                        |
+| ---------------------------- | ---------------------------------------------- |
+| `.github/workflows/lint.yml` | CI pipeline — super-linter action with caching |
+| `.github/super-linter.env`   | Enabled linters + config paths                 |
+| `.markdownlint.jsonc`        | Markdown rule overrides                        |
+| `.shellcheckrc`              | Shellcheck rule overrides                      |
+| `.prettierrc`                | Prettier formatting rules                      |
 
 ## Growth
 

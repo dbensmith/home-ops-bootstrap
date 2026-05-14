@@ -1,39 +1,56 @@
+---
 name: Lint
 
 on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  lint:
+  build:
+    name: Lint
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          node-version: "20"
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: Install shellcheck
+      - name: Load shared Super-Linter configuration
+        shell: bash
         run: |
-          SHELLCHECK_VERSION=0.10.0
-          mkdir -p .bin
-          curl -sSfL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
-          install -m 755 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" .bin/
-          rm -rf "shellcheck-v${SHELLCHECK_VERSION}"
+          grep -vE '^\s*(#|$)' .github/super-linter.env >> "$GITHUB_ENV"
 
-      - name: Install shfmt
-        run: |
-          SHFMT_VERSION=3.10.0
-          mkdir -p .bin
-          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o .bin/shfmt
-          chmod +x .bin/shfmt
+      - name: Restore Super-Linter caches
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/_github_home/.cache
+          key: ${{ runner.os }}-super-linter-cache-${{ hashFiles('.github/super-linter.env', '.github/workflows/lint.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-super-linter-cache-
 
-      - name: Run lint
-        run: npm run lint
+      - name: Super-linter
+        uses: super-linter/super-linter@v8.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
+          ENABLE_GITHUB_PULL_REQUEST_SUMMARY_COMMENT: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+          SAVE_SUPER_LINTER_SUMMARY: true
+          FAIL_ON_INVALID_GITHUB_ACTIONS_EVENT_CONFIGURATION: true
+          MULTI_STATUS: true

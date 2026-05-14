@@ -2,4 +2,12 @@
 enable=all
 
 # SC1091: Not following sourced files — external paths not available at lint time
-disable=SC1091
+# SC2250: Brace style preference — cosmetic
+# SC2292: [[ ]] vs [ ] preference — both valid in bash
+# SC2248: Double-quote preference — cosmetic
+# SC2162: read without -r — informational
+# SC2312: Command return value masked — informational
+# SC2310: Function in if condition — informational
+# SC2015: A && B || C pattern — informational
+# SC2128: Array expansion without index — false positive on single-element arrays
+disable=SC1091,SC2250,SC2292,SC2248,SC2162,SC2312,SC2310,SC2015,SC2128

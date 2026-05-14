@@ -191,6 +191,19 @@ cloud-init clean --logs && fstrim -av && shutdown now
 - `qemu-guest-agent`
 - `cloud-utils`, `cloud-guest-utils`
 
+## Linting
+
+Uses [super-linter](https://github.com/super-linter/super-linter) for CI and local development. Same container, same config — mirrors the [desktop-environment](https://github.com/dbensmith/desktop-environment) pattern.
+
+Enabled linters: **shellcheck** (bash), **markdownlint** (markdown), **prettier** (JSON, YAML, markdown formatting).
+
+```bash
+./scripts/lint.sh      # Check mode (same as CI)
+./scripts/format.sh    # Auto-fix mode
+```
+
+Requires docker or podman. See `.github/workflows/lint.yml` and `.github/super-linter.env` for config.
+
 ## Future
 
 ```text
