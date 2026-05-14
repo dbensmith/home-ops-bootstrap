@@ -98,14 +98,30 @@ CLOUD_PASSWORD_DEFAULT=${CLOUD_PASSWORD_OP:-$(date +%s | sha256sum | base64 | he
 read -p "Enter a Cloud-Init Password for $OSNAME [$CLOUD_PASSWORD_DEFAULT]: " CLOUD_PASSWORD
 CLOUD_PASSWORD=${CLOUD_PASSWORD:-$CLOUD_PASSWORD_DEFAULT}
 
+# Helper: 1Password Connect Server is read-only for item writes.
+# Only attempt credential updates when using op signin or service account.
+_op_backend_writable() {
+    [[ -z "${OP_CONNECT_TOKEN:-}${OP_CONNECT_HOST:-}${OP_CONNECT_TOKEN_ENV:-}${OP_CONNECT_HOST_ENV:-}" ]]
+}
+
 # Update 1Password if user changed values
 if [ -n "$CLOUD_USER_OP" ] && [ "$CLOUD_USER" != "$CLOUD_USER_OP" ]; then
-    echo "Updating cloud-init username in 1Password..."
-    op item edit zimfxfdnvyaecrwx3rnvk25azi "username=$CLOUD_USER" --vault Automation
+    if _op_backend_writable; then
+        echo "Updating cloud-init username in 1Password..."
+        op item edit zimfxfdnvyaecrwx3rnvk25azi "username=$CLOUD_USER" --vault Automation || \
+            echo "Warning: Failed to update 1Password username. Check service account permissions." >&2
+    else
+        echo "Skipping 1Password username update (Connect Server is read-only; use 'op signin' to update)." >&2
+    fi
 fi
 if [ -n "$CLOUD_PASSWORD_OP" ] && [ "$CLOUD_PASSWORD" != "$CLOUD_PASSWORD_OP" ]; then
-    echo "Updating cloud-init password in 1Password..."
-    op item edit zimfxfdnvyaecrwx3rnvk25azi "password=$CLOUD_PASSWORD" --vault Automation
+    if _op_backend_writable; then
+        echo "Updating cloud-init password in 1Password..."
+        op item edit zimfxfdnvyaecrwx3rnvk25azi "password=$CLOUD_PASSWORD" --vault Automation || \
+            echo "Warning: Failed to update 1Password password. Check service account permissions." >&2
+    else
+        echo "Skipping 1Password password update (Connect Server is read-only; use 'op signin' to update)." >&2
+    fi
 fi
 
 echo ""

@@ -63,6 +63,11 @@ home-ops-bootstrap/
 - Truncate `/etc/machine-id`, `/var/lib/dbus/machine-id`
 - `dpkg-reconfigure openssh-server` on first boot
 
+## Commit conventions
+
+ALL commits use Conventional Commits format. Load caveman-commit skill before writing any commit message — compress subject ≤50 chars, imperative mood, body only when why not obvious. No AI attribution, no emoji, no fluff. Breaking changes demand body with migration notes.
+<!-- commit-conventions -->
+
 ## Dependencies
 
 ### On Proxmox host

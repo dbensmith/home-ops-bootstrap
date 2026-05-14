@@ -127,7 +127,9 @@ export TZ="America/New_York"
 
 ## 1Password Integration
 
-Secrets stored as `op://` references in `.env.tpl` files. `op run --env-file` resolves them at runtime. Scripts read `$SSHKEY`, `$NS1`, etc. directly — zero `op read` calls in the builder.
+Secrets stored as `op://` references in `.env.tpl` files. `op run --env-file` resolves them at runtime. Scripts read `$SSHKEY`, `$NS1`, etc. directly — zero `op read` calls for those values.
+
+The builder also fetches cloud-init credentials (username/password) from a 1Password item at interactive prompt time, and writes them back if you change them.
 
 Required 1Password secrets:
 - `SSHKEY` — SSH public key injected into template
@@ -135,9 +137,23 @@ Required 1Password secrets:
 - `SEARCHDOMAIN` — internal network domain
 - `TZ` — timezone (optional)
 
-Auth methods:
-- **Interactive:** `op signin`
-- **Headless/CI:** `OP_SERVICE_ACCOUNT_TOKEN` env var
+### Auth Methods
+
+| Method | Setup | `op run` (secrets) | Credential write-back |
+|--------|-------|-------------------|-----------------------|
+| **`op signin`** (interactive) | `op signin` | ✓ | ✓ |
+| **Service Account** (headless) | `export OP_SERVICE_ACCOUNT_TOKEN=...` | ✓ | ✓ (needs write permission on `zimfxfdnvyaecrwx3rnvk25azi`) |
+| **Connect Server** (headless) | `export OP_CONNECT_HOST=... OP_CONNECT_TOKEN=...` | ✓ | ✗ (read-only) |
+
+> **Connect Server limitation:** Secrets resolve fine via `op run`, but `op item edit` writes are not supported. If you change cloud-init credentials at the prompt, the script prints a warning and continues without saving. To update credentials, use `op signin` or a service account with write access instead.
+
+### Cloud-Init Credentials
+
+The builder fetches defaults from `op://Automation/zimfxfdnvyaecrwx3rnvk25azi`:
+- `username` field → default cloud-init user (falls back to `root`)
+- `password` field → default cloud-init password (falls back to auto-generated 16-char password)
+
+If you change either value at the prompt, the script writes the new value back to the same 1Password item (requires writable auth — see table above).
 
 ## sysprep Operations
 
