@@ -45,7 +45,7 @@ check_cmd "npm" "bundled with Node.js"
 echo ""
 
 check_cmd "shellcheck" "apt-get install shellcheck (or brew install shellcheck)"
-check_cmd "shfmt" "go install mvdan.cc/sh/v3/cmd/shfmt@latest (or brew install shfmt)"
+check_cmd "shfmt" "go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0 (or brew install shfmt)"
 
 echo ""
 
