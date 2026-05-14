@@ -36,7 +36,11 @@ DELETEIMG="yes" # Set to "no" to keep image and qcow2 files (useful in Dev)
 OSNAME="Ubuntu 26.04"
 TEMPL_NAME_DEFAULT="ubuntu-26.04-server-cloudimg-$(date +%Y%m%d)"
 VMID_DEFAULT="526040"
-CLOUD_USER_DEFAULT="root"
+# Cloud-Init credentials — fetched from 1Password, updated on change
+OP_CREDS="op://Automation/zimfxfdnvyaecrwx3rnvk25azi"
+CLOUD_USER_OP=$(op read "${OP_CREDS}/username" 2>/dev/null || echo "")
+CLOUD_PASSWORD_OP=$(op read "${OP_CREDS}/password" 2>/dev/null || echo "")
+CLOUD_USER_DEFAULT=${CLOUD_USER_OP:-"root"}
 MEM="4096"
 BALLOON="1024"
 DISK_SIZE="16G"
@@ -90,10 +94,19 @@ VMID=${VMID:-$VMID_DEFAULT}
 read -p "Enter a Cloud-Init Username for $OSNAME [$CLOUD_USER_DEFAULT]: " CLOUD_USER
 CLOUD_USER=${CLOUD_USER:-$CLOUD_USER_DEFAULT}
 
-GENPASS=$(date +%s | sha256sum | base64 | head -c 16 ; echo)
-CLOUD_PASSWORD_DEFAULT=$GENPASS
+CLOUD_PASSWORD_DEFAULT=${CLOUD_PASSWORD_OP:-$(date +%s | sha256sum | base64 | head -c 16 ; echo)}
 read -p "Enter a Cloud-Init Password for $OSNAME [$CLOUD_PASSWORD_DEFAULT]: " CLOUD_PASSWORD
 CLOUD_PASSWORD=${CLOUD_PASSWORD:-$CLOUD_PASSWORD_DEFAULT}
+
+# Update 1Password if user changed values
+if [ -n "$CLOUD_USER_OP" ] && [ "$CLOUD_USER" != "$CLOUD_USER_OP" ]; then
+    echo "Updating cloud-init username in 1Password..."
+    op item edit zimfxfdnvyaecrwx3rnvk25azi "username=$CLOUD_USER" --vault Automation
+fi
+if [ -n "$CLOUD_PASSWORD_OP" ] && [ "$CLOUD_PASSWORD" != "$CLOUD_PASSWORD_OP" ]; then
+    echo "Updating cloud-init password in 1Password..."
+    op item edit zimfxfdnvyaecrwx3rnvk25azi "password=$CLOUD_PASSWORD" --vault Automation
+fi
 
 echo ""
 echo "=== Starting template build for: $TEMPL_NAME (VMID: $VMID) ==="
