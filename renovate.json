@@ -4,17 +4,8 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts\\/setup\\.sh$/"],
-      "matchStrings": ["SHELLCHECK_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
-      "depNameTemplate": "koalaman/shellcheck",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/^scripts\\/setup\\.sh$/"],
-      "matchStrings": ["SHFMT_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "managerFilePatterns": ["/^\\.github\\/workflows\\/lint\\.yml$/"],
+      "matchStrings": ["SHFMT_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
       "depNameTemplate": "mvdan/sh",
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",

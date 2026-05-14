@@ -12,10 +12,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-# Prepend project-local tool directories to PATH
-if [ -d "$REPO_ROOT/.bin" ]; then
-    export PATH="$REPO_ROOT/.bin:$PATH"
-fi
 if [ -d "$REPO_ROOT/node_modules/.bin" ]; then
     export PATH="$REPO_ROOT/node_modules/.bin:$PATH"
 fi
@@ -53,9 +49,9 @@ fi
 
 # --- Markdown: markdownlint ---
 if $FIX_MODE; then
-    run_check "markdownlint" markdownlint-cli2 --fix "**/*.md" "#node_modules" "#.git" "#.bin"
+    run_check "markdownlint" markdownlint-cli2 --fix "**/*.md" "#node_modules" "#.git"
 else
-    run_check "markdownlint" markdownlint-cli2 "**/*.md" "#node_modules" "#.git" "#.bin"
+    run_check "markdownlint" markdownlint-cli2 "**/*.md" "#node_modules" "#.git"
 fi
 
 # --- Formatting: prettier ---

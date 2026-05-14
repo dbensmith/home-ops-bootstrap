@@ -20,20 +20,12 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install shellcheck
-        run: |
-          SHELLCHECK_VERSION=0.10.0
-          mkdir -p .bin
-          curl -sSfL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
-          install -m 755 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" .bin/
-          rm -rf "shellcheck-v${SHELLCHECK_VERSION}"
-
       - name: Install shfmt
         run: |
           SHFMT_VERSION=3.10.0
-          mkdir -p .bin
-          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o .bin/shfmt
-          chmod +x .bin/shfmt
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o "$HOME/.local/bin/shfmt"
+          chmod +x "$HOME/.local/bin/shfmt"
 
       - name: Run lint
         run: npm run lint

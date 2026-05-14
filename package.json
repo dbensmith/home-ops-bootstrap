@@ -9,8 +9,7 @@
   "scripts": {
     "lint": "bash scripts/lint.sh",
     "format": "bash scripts/lint.sh --fix",
-    "lint:doctor": "bash scripts/lint-doctor.sh",
-    "setup": "bash scripts/setup.sh"
+    "lint:doctor": "bash scripts/lint-doctor.sh"
   },
   "devDependencies": {
     "markdownlint-cli2": "0.22.1",

@@ -39,13 +39,13 @@ check_npm_dep() {
 echo "=== Lint Doctor ==="
 echo ""
 
-check_cmd "node"     "https://nodejs.org/ (>=20)"
-check_cmd "npm"      "bundled with Node.js"
+check_cmd "node" "https://nodejs.org/ (>=20)"
+check_cmd "npm" "bundled with Node.js"
 
 echo ""
 
-check_cmd ".bin/shellcheck" "npm run setup (or https://github.com/koalaman/shellcheck)"
-check_cmd ".bin/shfmt"       "npm run setup (or go install mvdan.cc/sh/v3/cmd/shfmt@latest)"
+check_cmd "shellcheck" "apt-get install shellcheck (or brew install shellcheck)"
+check_cmd "shfmt" "go install mvdan.cc/sh/v3/cmd/shfmt@latest (or brew install shfmt)"
 
 echo ""
 
@@ -59,7 +59,7 @@ fi
 
 echo ""
 if [ "$FAILURES" -gt 0 ]; then
-    echo "Found $FAILURES problem(s). Run 'npm run setup' to fix." >&2
+    echo "Found $FAILURES problem(s). Install missing tools via your OS package manager." >&2
     exit 1
 fi
 

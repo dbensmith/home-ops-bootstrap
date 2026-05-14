@@ -20,8 +20,8 @@ REQUIRED_PKG="libguestfs-tools"
 PKG_OK=$(dpkg-query -W --showformat='${Status}\n' $REQUIRED_PKG 2>/dev/null | grep "install ok installed")
 echo "Checking for $REQUIRED_PKG: ${PKG_OK:-NOT INSTALLED}"
 if [ -z "$PKG_OK" ]; then
-  echo "Error: $REQUIRED_PKG not installed. Run: apt-get install $REQUIRED_PKG"
-  exit 1
+    echo "Error: $REQUIRED_PKG not installed. Run: apt-get install $REQUIRED_PKG"
+    exit 1
 fi
 
 # --- Image Variables ---
@@ -46,15 +46,15 @@ BALLOON="1024"
 DISK_SIZE="16G"
 DISK_STOR="ceph"
 NET_BRIDGE="vmbr10"
-VLAN="100"              # VLAN tag; set to "" if no VLAN required
+VLAN="100" # VLAN tag; set to "" if no VLAN required
 CORES="2"
 OS_TYPE="l26"
-AGENT_ENABLE="1"        # 0 = disable QEMU guest agent
-FSTRIM="1"              # 0 = disable fstrim on cloned disks
-BIOS="ovmf"             # "ovmf" (UEFI) or "seabios"
+AGENT_ENABLE="1" # 0 = disable QEMU guest agent
+FSTRIM="1"       # 0 = disable fstrim on cloned disks
+BIOS="ovmf"      # "ovmf" (UEFI) or "seabios"
 MACHINE="q35"
 VIRTPKG="qemu-guest-agent,cloud-utils,cloud-guest-utils"
-SETX11="yes"            # "yes" = configure keyboard/locale, "no" = skip
+SETX11="yes" # "yes" = configure keyboard/locale, "no" = skip
 X11LAYOUT="us"
 X11MODEL="pc105"
 LOCALLANG="en_CA.UTF-8"
@@ -64,8 +64,8 @@ LOCALLANG="en_CA.UTF-8"
 # SSHKEY, NS1, NS2, SEARCHDOMAIN are required.
 
 if [ -z "${SSHKEY:-}" ]; then
-  echo "Error: SSHKEY environment variable is required." >&2
-  exit 1
+    echo "Error: SSHKEY environment variable is required." >&2
+    exit 1
 fi
 
 # Compose nameserver list from individual NS env vars
@@ -75,13 +75,13 @@ NAMESERVER="${NAMESERVER#"${NAMESERVER%%[![:space:]]*}"}" # trim leading whitesp
 NAMESERVER="${NAMESERVER%"${NAMESERVER##*[![:space:]]}"}" # trim trailing whitespace
 
 if [ -z "$NAMESERVER" ]; then
-  echo "Error: NS1 and/or NS2 environment variable must be set." >&2
-  exit 1
+    echo "Error: NS1 and/or NS2 environment variable must be set." >&2
+    exit 1
 fi
 
 if [ -z "${SEARCHDOMAIN:-}" ]; then
-  echo "Error: SEARCHDOMAIN environment variable is required." >&2
-  exit 1
+    echo "Error: SEARCHDOMAIN environment variable is required." >&2
+    exit 1
 fi
 
 # --- Interactive Prompts (press Enter to accept defaults) ---
@@ -94,7 +94,10 @@ VMID=${VMID:-$VMID_DEFAULT}
 read -p "Enter a Cloud-Init Username for $OSNAME [$CLOUD_USER_DEFAULT]: " CLOUD_USER
 CLOUD_USER=${CLOUD_USER:-$CLOUD_USER_DEFAULT}
 
-CLOUD_PASSWORD_DEFAULT=${CLOUD_PASSWORD_OP:-$(date +%s | sha256sum | base64 | head -c 16 ; echo)}
+CLOUD_PASSWORD_DEFAULT=${CLOUD_PASSWORD_OP:-$(
+    date +%s | sha256sum | base64 | head -c 16
+    echo
+)}
 read -p "Enter a Cloud-Init Password for $OSNAME [$CLOUD_PASSWORD_DEFAULT]: " CLOUD_PASSWORD
 CLOUD_PASSWORD=${CLOUD_PASSWORD:-$CLOUD_PASSWORD_DEFAULT}
 
@@ -108,8 +111,8 @@ _op_backend_writable() {
 if [ -n "$CLOUD_USER_OP" ] && [ "$CLOUD_USER" != "$CLOUD_USER_OP" ]; then
     if _op_backend_writable; then
         echo "Updating cloud-init username in 1Password..."
-        op item edit zimfxfdnvyaecrwx3rnvk25azi "username=$CLOUD_USER" --vault Automation || \
-            echo "Warning: Failed to update 1Password username. Check service account permissions." >&2
+        op item edit zimfxfdnvyaecrwx3rnvk25azi "username=$CLOUD_USER" --vault Automation \
+            || echo "Warning: Failed to update 1Password username. Check service account permissions." >&2
     else
         echo "Skipping 1Password username update (Connect Server is read-only; use 'op signin' to update)." >&2
     fi
@@ -117,8 +120,8 @@ fi
 if [ -n "$CLOUD_PASSWORD_OP" ] && [ "$CLOUD_PASSWORD" != "$CLOUD_PASSWORD_OP" ]; then
     if _op_backend_writable; then
         echo "Updating cloud-init password in 1Password..."
-        op item edit zimfxfdnvyaecrwx3rnvk25azi "password=$CLOUD_PASSWORD" --vault Automation || \
-            echo "Warning: Failed to update 1Password password. Check service account permissions." >&2
+        op item edit zimfxfdnvyaecrwx3rnvk25azi "password=$CLOUD_PASSWORD" --vault Automation \
+            || echo "Warning: Failed to update 1Password password. Check service account permissions." >&2
     else
         echo "Skipping 1Password password update (Connect Server is read-only; use 'op signin' to update)." >&2
     fi
@@ -159,24 +162,24 @@ VC_GROW_ARG+="  resize2fs /dev/vda1 2>/dev/null || resize2fs /dev/sda1 2>/dev/nu
 VC_GROW_ARG+="' "
 
 if [ -n "${TZ:-}" ]; then
-  echo "       Setting timezone to $TZ..."
-  eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG --timezone \"$TZ\""
+    echo "       Setting timezone to $TZ..."
+    eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG --timezone \"$TZ\""
 else
-  eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG"
+    eval "virt-customize -a \"$IMG_NAME\" $VC_GROW_ARG"
 fi
 
 if [ "$SETX11" = "yes" ]; then
-  echo "       Setting keyboard layout ($X11LAYOUT/$X11MODEL) and locale ($LOCALLANG)..."
-  virt-customize -a "$IMG_NAME" \
-    --firstboot-command "localectl set-locale LANG=$LOCALLANG" \
-    --firstboot-command "localectl set-x11-keymap $X11LAYOUT $X11MODEL"
+    echo "       Setting keyboard layout ($X11LAYOUT/$X11MODEL) and locale ($LOCALLANG)..."
+    virt-customize -a "$IMG_NAME" \
+        --firstboot-command "localectl set-locale LANG=$LOCALLANG" \
+        --firstboot-command "localectl set-x11-keymap $X11LAYOUT $X11MODEL"
 fi
 
 echo "       Updating packages and installing: $VIRTPKG (this may take a while)..."
 virt-customize -a "$IMG_NAME" --update --install "$VIRTPKG"
 
 echo "       Uploading Proxmox Cloud-init datasource config..."
-cat > "$WORK_DIR/99_pve.cfg" << 'EOF'
+cat >"$WORK_DIR/99_pve.cfg" <<'EOF'
 # to update this file, run dpkg-reconfigure cloud-init
 datasource_list: [ NoCloud, ConfigDrive ]
 EOF
@@ -188,7 +191,7 @@ echo "       Running template hygiene..."
 echo "       Image customization complete."
 
 # --- VM Notes ---
-mapfile -d '' NOTES << 'EOF'
+mapfile -d '' NOTES <<'EOF'
 ## Template hygiene (automated during creation)
 The creation script automatically cleans the image via sysprep-ubuntu-resolute-template.sh:
 - apt cache cleanup
@@ -225,25 +228,25 @@ EOF
 # --- Destroy Existing VM (if any) ---
 echo "[3/7] Checking for existing VM $VMID..."
 if qm status "$VMID" &>/dev/null; then
-  echo "       Destroying existing VM $VMID..."
-  qm stop "$VMID" &>/dev/null || true
-  qm destroy "$VMID" --purge
+    echo "       Destroying existing VM $VMID..."
+    qm stop "$VMID" &>/dev/null || true
+    qm destroy "$VMID" --purge
 else
-  echo "       No existing VM $VMID found."
+    echo "       No existing VM $VMID found."
 fi
 
 # --- Create VM ---
 echo "[4/7] Creating VM $VMID ($TEMPL_NAME)..."
 
 qm create "$VMID" \
-  --name "$TEMPL_NAME" \
-  --memory "$MEM" \
-  --balloon "$BALLOON" \
-  --cores "$CORES" \
-  --bios "$BIOS" \
-  --machine "$MACHINE" \
-  --cpu host \
-  --net0 "virtio,mtu=1,bridge=${NET_BRIDGE}${VLAN:+,tag=$VLAN}"
+    --name "$TEMPL_NAME" \
+    --memory "$MEM" \
+    --balloon "$BALLOON" \
+    --cores "$CORES" \
+    --bios "$BIOS" \
+    --machine "$MACHINE" \
+    --cpu host \
+    --net0 "virtio,mtu=1,bridge=${NET_BRIDGE}${VLAN:+,tag=$VLAN}"
 
 qm set "$VMID" --ostype "$OS_TYPE"
 qm set "$VMID" --agent "enabled=${AGENT_ENABLE},fstrim_cloned_disks=${FSTRIM}"
@@ -283,7 +286,7 @@ qm set "$VMID" --description "$NOTES"
 # Inject SSH public key
 echo "[6/7] Injecting SSH key..."
 tmpfile=$(mktemp /tmp/sshkey.XXX.pub)
-echo "$SSHKEY" > "$tmpfile"
+echo "$SSHKEY" >"$tmpfile"
 qm set "$VMID" --sshkeys "$tmpfile"
 rm -f "$tmpfile"
 
@@ -298,11 +301,11 @@ qm template "$VMID"
 # --- Cleanup ---
 echo "Cleaning up temporary files..."
 if [ "$DELETEIMG" = "yes" ]; then
-  rm -fv "$WORK_DIR/$IMG_NAME"
-  rm -fv "$WORK_DIR/$SRC_IMG"
-  rm -fv "$WORK_DIR/99_pve.cfg"
+    rm -fv "$WORK_DIR/$IMG_NAME"
+    rm -fv "$WORK_DIR/$SRC_IMG"
+    rm -fv "$WORK_DIR/99_pve.cfg"
 else
-  echo "       DELETEIMG=no: keeping image files in $WORK_DIR"
+    echo "       DELETEIMG=no: keeping image files in $WORK_DIR"
 fi
 
 echo ""
