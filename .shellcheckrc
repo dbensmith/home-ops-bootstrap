@@ -1,0 +1,5 @@
+# Enable all checks
+enable=all
+
+# SC1091: Not following sourced files — external paths not available at lint time
+disable=SC1091

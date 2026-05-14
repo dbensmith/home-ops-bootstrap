@@ -1,0 +1,20 @@
+{
+  // MD013/line-length: Allow long lines (code blocks, URLs)
+  "MD013": {
+    "line_length": 400
+  },
+  // MD024/no-duplicate-heading: Allow duplicate headings under different parents
+  "MD024": {
+    "siblings_only": true
+  },
+  // MD029/ol-prefix: Allow ordered lists with one_or_ordered prefix style
+  "MD029": {
+    "style": "one_or_ordered"
+  },
+  // MD041/first-line-heading: Don't require heading as first line
+  "MD041": false,
+  // MD046/code-block-style: Require fenced code blocks
+  "MD046": {
+    "style": "fenced"
+  }
+}

@@ -14,7 +14,7 @@ set -euo pipefail
 # 1Password CLI: https://1password.com/downloads/command-line/
 #
 # 1Password auth (one required):
-#   op signin                              # interactive
+#   eval $(op signin)                       # interactive (or: op signin -f)
 #   export OP_SERVICE_ACCOUNT_TOKEN=...    # headless/CI
 #
 # Your .env.tpl needs op:// references for SSHKEY, NS1, NS2, SEARCHDOMAIN.
@@ -76,7 +76,7 @@ if ! op whoami &>/dev/null; then
             echo "In CI, set: OP_SERVICE_ACCOUNT_TOKEN" >&2
             echo "  or both: OP_CONNECT_HOST_ENV + OP_CONNECT_TOKEN_ENV" >&2
         else
-            echo "For local dev, sign in first:  op signin" >&2
+            echo "For local dev, sign in first:  eval \$(op signin)" >&2
             echo "Or set: OP_SERVICE_ACCOUNT_TOKEN" >&2
             echo "  or both: OP_CONNECT_HOST + OP_CONNECT_TOKEN" >&2
         fi
