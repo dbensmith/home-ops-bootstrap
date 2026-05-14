@@ -21,7 +21,9 @@ jobs:
         run: npm ci
 
       - name: Install shfmt
-        run: go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
+        run: |
+          go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Run lint
         run: npm run lint
