@@ -4,7 +4,7 @@ Infrastructure bootstrapping scripts. Runs on Proxmox hosts before Ansible takes
 
 ## Structure
 
-```
+```text
 home-ops-bootstrap/
 ├── build-ubuntu-resolute-template          # Entry point. op run wrapper.
 └── proxmox/
@@ -15,7 +15,7 @@ home-ops-bootstrap/
 
 ## Call chain
 
-```
+```text
 ./build-ubuntu-resolute-template
   │
   ├─ op run --env-file=proxmox/build-ubuntu-resolute-template.env.tpl
@@ -49,12 +49,14 @@ When multiple OpenCode sessions run concurrently against this repo, each session
 MUST use a separate git worktree to avoid filesystem collisions.
 
 **Session startup checklist:**
+
 1. Derive a short slug from the task (e.g. `pve-firewall`, `talos-network`)
 2. Create worktree: `git worktree add ../home-ops-bootstrap-<slug> -b feat/<slug>`
 3. Restart OpenCode inside the new worktree directory
 4. Work as usual — commit to the branch, push when ready
 
 **Example — agent bootstrapping a PVE host firewall:**
+
 ```bash
 git worktree add ../home-ops-bootstrap-pve-firewall -b feat/pve-firewall
 cd ../home-ops-bootstrap-pve-firewall
@@ -62,6 +64,7 @@ opencode   # start new session here
 ```
 
 **Merging back:**
+
 ```bash
 cd /home/pengwin/repos/home-ops-bootstrap   # primary worktree
 git merge feat/pve-firewall
@@ -69,12 +72,14 @@ git push origin main
 ```
 
 **Cleanup after merge (optional):**
+
 ```bash
 git worktree remove ../home-ops-bootstrap-pve-firewall
 git branch -d feat/pve-firewall
 ```
 
 **Rules:**
+
 - Never run two OpenCode sessions in the same worktree directory
 - Never share a branch between two active sessions
 - Each worktree gets its own branch (`feat/<slug>` or `fix/<slug>`)
@@ -82,17 +87,20 @@ git branch -d feat/pve-firewall
 - Worktree naming: `../<repo>-<slug>` — keeps siblings in parent directory
 
 **View active worktrees:**
+
 ```bash
 git worktree list
 ```
 
 ### 1Password
+
 - Secrets stored as `op://` references in `.env.tpl` files
 - `op run --env-file` resolves them at runtime → env vars
 - Scripts read `$SSHKEY`, `$NS1`, etc. directly — zero `op read` calls in builder
 - Auth: `op signin` (local) or `OP_SERVICE_ACCOUNT_TOKEN` (headless/CI)
 
 ### Template creation
+
 - Ceph-backed storage assumed (`DISK_STOR="ceph"`)
 - OVMF/UEFI boot required (`--bios ovmf --efidisk0`)
 - virt-customize installs `qemu-guest-agent,cloud-utils,cloud-guest-utils`
@@ -101,6 +109,7 @@ git worktree list
 - Converts to Proxmox template (`qm template`) at end
 
 ### sysprep operations (offline, via virt-customize)
+
 - `apt-get clean && apt-get autoclean`
 - `cloud-init clean --logs`
 - Truncate `/etc/machine-id`, `/var/lib/dbus/machine-id`
@@ -109,22 +118,26 @@ git worktree list
 ## Commit conventions
 
 ALL commits use Conventional Commits format. Load caveman-commit skill before writing any commit message — compress subject ≤50 chars, imperative mood, body only when why not obvious. No AI attribution, no emoji, no fluff. Breaking changes demand body with migration notes.
+
 <!-- commit-conventions -->
 
 ## Dependencies
 
 ### On Proxmox host
+
 - `libguestfs-tools` (virt-customize)
 - `1password-cli` (op)
 
 ### In template image (installed by virt-customize)
+
 - `qemu-guest-agent`
 - `cloud-utils`, `cloud-guest-utils`
 
 ## Growth
 
 Future directories for other bootstrap domains:
-```
+
+```text
 home-ops-bootstrap/
 ├── proxmox/          # VM templates
 ├── pve-host/         # PVE node provisioning (packages, firewall, Ceph init)

@@ -12,23 +12,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install npm dependencies
+        run: npm ci
+
       - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+        run: |
+          SHELLCHECK_VERSION=0.10.0
+          mkdir -p .bin
+          curl -sSfL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
+          install -m 755 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" .bin/
+          rm -rf "shellcheck-v${SHELLCHECK_VERSION}"
 
       - name: Install shfmt
         run: |
           SHFMT_VERSION=3.10.0
-          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" \
-            -o /usr/local/bin/shfmt
-          chmod +x /usr/local/bin/shfmt
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2
+          mkdir -p .bin
+          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o .bin/shfmt
+          chmod +x .bin/shfmt
 
       - name: Run lint
-        run: bash scripts/lint.sh
+        run: npm run lint

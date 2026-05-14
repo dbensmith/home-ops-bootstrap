@@ -24,15 +24,15 @@ That's it. The script auto-detects it's running remotely, downloads the builder 
 
 This repo contains three scripts that work together:
 
-| File | Role | Run where |
-|------|------|-----------|
-| `build-ubuntu-resolute-template` | Entry point — checks prerequisites, resolves 1Password secrets, launches builder | Proxmox host |
-| `proxmox/build-ubuntu-resolute-template.sh` | Builder — downloads Ubuntu cloud image, customizes it, creates Proxmox VM template | Proxmox host (called by wrapper) |
+| File                                          | Role                                                                                | Run where                              |
+| --------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------- |
+| `build-ubuntu-resolute-template`              | Entry point — checks prerequisites, resolves 1Password secrets, launches builder    | Proxmox host                           |
+| `proxmox/build-ubuntu-resolute-template.sh`   | Builder — downloads Ubuntu cloud image, customizes it, creates Proxmox VM template  | Proxmox host (called by wrapper)       |
 | `proxmox/sysprep-ubuntu-resolute-template.sh` | Utility — cleans a qcow2 image (apt cache, cloud-init reset, machine-IDs, SSH keys) | Proxmox host or any Debian/Ubuntu host |
 
 ## Call Chain
 
-```
+```text
 build-ubuntu-resolute-template
   │
   ├─ (auto-downloads proxmox/*.sh from GitHub if no local checkout)
@@ -94,26 +94,27 @@ export TZ="America/New_York"
 ```
 
 > **Note:** The wrapper uses `op run --env-file` which only supports `op://` URIs. If you want plain env vars, run the builder script directly:
+>
 > ```bash
 > ./proxmox/build-ubuntu-resolute-template.sh
 > ```
 
 ## VM Template Spec
 
-| Component | Detail |
-|-----------|--------|
-| **OS** | Ubuntu Resolute (26.04) server cloud image, amd64v3 |
-| **Storage** | Ceph-backed (`ceph` pool) |
-| **Boot** | OVMF/UEFI (q35 machine type) |
-| **CPU** | host type, 2 cores |
-| **RAM** | 4096 MB (balloonable to 1024 MB) |
-| **Disk** | 16 GB, SCSI with virtio-scsi-single, writeback cache, discard, iothread, SSD emulation |
-| **Network** | virtio on vmbr10, VLAN 100, DHCP via Cloud-Init |
-| **Guest Agent** | qemu-guest-agent enabled, fstrim on cloned disks |
-| **Packages** | qemu-guest-agent, cloud-utils, cloud-guest-utils |
-| **Timezone** | Configurable via `TZ` env var |
-| **Locale** | en_CA.UTF-8, US keyboard layout |
-| **Cloud-Init** | NoCloud + ConfigDrive datasources |
+| Component       | Detail                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------- |
+| **OS**          | Ubuntu Resolute (26.04) server cloud image, amd64v3                                    |
+| **Storage**     | Ceph-backed (`ceph` pool)                                                              |
+| **Boot**        | OVMF/UEFI (q35 machine type)                                                           |
+| **CPU**         | host type, 2 cores                                                                     |
+| **RAM**         | 4096 MB (balloonable to 1024 MB)                                                       |
+| **Disk**        | 16 GB, SCSI with virtio-scsi-single, writeback cache, discard, iothread, SSD emulation |
+| **Network**     | virtio on vmbr10, VLAN 100, DHCP via Cloud-Init                                        |
+| **Guest Agent** | qemu-guest-agent enabled, fstrim on cloned disks                                       |
+| **Packages**    | qemu-guest-agent, cloud-utils, cloud-guest-utils                                       |
+| **Timezone**    | Configurable via `TZ` env var                                                          |
+| **Locale**      | en_CA.UTF-8, US keyboard layout                                                        |
+| **Cloud-Init**  | NoCloud + ConfigDrive datasources                                                      |
 
 ## Key Commands
 
@@ -132,6 +133,7 @@ Secrets stored as `op://` references in `.env.tpl` files. `op run --env-file` re
 The builder also fetches cloud-init credentials (username/password) from a 1Password item at interactive prompt time, and writes them back if you change them.
 
 Required 1Password secrets:
+
 - `SSHKEY` — SSH public key injected into template
 - `NS1`, `NS2` — DNS servers for Cloud-Init
 - `SEARCHDOMAIN` — internal network domain
@@ -139,17 +141,18 @@ Required 1Password secrets:
 
 ### Auth Methods
 
-| Method | Setup | `op run` (secrets) | Credential write-back |
-|--------|-------|-------------------|-----------------------|
-| **`op signin`** (interactive) | `op signin` | ✓ | ✓ |
-| **Service Account** (headless) | `export OP_SERVICE_ACCOUNT_TOKEN=...` | ✓ | ✓ (needs write permission on `zimfxfdnvyaecrwx3rnvk25azi`) |
-| **Connect Server** (headless) | `export OP_CONNECT_HOST=... OP_CONNECT_TOKEN=...` | ✓ | ✗ (read-only) |
+| Method                         | Setup                                             | `op run` (secrets) | Credential write-back                                      |
+| ------------------------------ | ------------------------------------------------- | ------------------ | ---------------------------------------------------------- |
+| **`op signin`** (interactive)  | `op signin`                                       | ✓                  | ✓                                                          |
+| **Service Account** (headless) | `export OP_SERVICE_ACCOUNT_TOKEN=...`             | ✓                  | ✓ (needs write permission on `zimfxfdnvyaecrwx3rnvk25azi`) |
+| **Connect Server** (headless)  | `export OP_CONNECT_HOST=... OP_CONNECT_TOKEN=...` | ✓                  | ✗ (read-only)                                              |
 
 > **Connect Server limitation:** Secrets resolve fine via `op run`, but `op item edit` writes are not supported. If you change cloud-init credentials at the prompt, the script prints a warning and continues without saving. To update credentials, use `op signin` or a service account with write access instead.
 
 ### Cloud-Init Credentials
 
 The builder fetches defaults from `op://Automation/zimfxfdnvyaecrwx3rnvk25azi`:
+
 - `username` field → default cloud-init user (falls back to `root`)
 - `password` field → default cloud-init password (falls back to auto-generated 16-char password)
 
@@ -158,6 +161,7 @@ If you change either value at the prompt, the script writes the new value back t
 ## sysprep Operations
 
 Offline image cleanup via `virt-customize`:
+
 - `apt-get clean && apt-get autoclean`
 - `cloud-init clean --logs`
 - Truncate `/etc/machine-id` and `/var/lib/dbus/machine-id`
@@ -178,16 +182,18 @@ cloud-init clean --logs && fstrim -av && shutdown now
 ## Dependencies
 
 ### Required on Proxmox host
+
 - `libguestfs-tools` (provides `virt-customize`)
 - `1password-cli` (`op`)
 
 ### Installed in template image (by `virt-customize`)
+
 - `qemu-guest-agent`
 - `cloud-utils`, `cloud-guest-utils`
 
 ## Future
 
-```
+```text
 home-ops-bootstrap/
 ├── proxmox/          # VM templates
 ├── pve-host/         # PVE node provisioning (packages, firewall, Ceph init)
@@ -199,6 +205,6 @@ Pattern per domain: wrapper at root (`build-<thing>`), scripts + `.env.tpl` in d
 
 ## Sources
 
-- https://www.yanboyang.com/clouldinit/
-- https://gist.github.com/chriswayg/43fbea910e024cbe608d7dcb12cb8466
-- https://cloud-images.ubuntu.com/resolute/
+- <https://www.yanboyang.com/clouldinit/>
+- <https://gist.github.com/chriswayg/43fbea910e024cbe608d7dcb12cb8466>
+- <https://cloud-images.ubuntu.com/resolute/>

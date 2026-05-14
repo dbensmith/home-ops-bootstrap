@@ -13,6 +13,10 @@ Thumbs.db
 *.swo
 *~
 
+# npm / local tooling
+node_modules/
+.bin/
+
 # Secrets (env files with resolved values — .tpl files are fine)
 .env
 *.env.local
