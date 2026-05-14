@@ -1,96 +1,74 @@
 #!/bin/bash
 set -euo pipefail
 
-# Lint all bash and markdown files in the repo.
-# Requires: shellcheck, shfmt, markdownlint-cli2 (or npx)
+# Run all linters and formatters. Aggregates results — runs everything
+# even if earlier steps fail, exits non-zero if any failed.
 #
-# Usage: ./scripts/lint.sh
+# Mirrors desktop-environment's bin/Invoke-Linters.ps1 pattern.
 #
-# To auto-fix formatting:
-#   ./scripts/lint.sh --fix
+# Usage: ./scripts/lint.sh         # Check mode
+#        ./scripts/lint.sh --fix   # Auto-fix mode
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
+# Prepend node_modules/.bin to PATH so npm-installed tools are found
+if [ -d "node_modules/.bin" ]; then
+    export PATH="$REPO_ROOT/node_modules/.bin:$PATH"
+fi
+
 FIX_MODE=false
 if [ "${1:-}" = "--fix" ]; then
     FIX_MODE=true
 fi
 
-# --- Tool availability ---
-missing_tools=()
-
-if ! command -v shellcheck &>/dev/null; then
-    missing_tools+=("shellcheck (apt-get install shellcheck)")
-fi
-
-if ! command -v shfmt &>/dev/null; then
-    missing_tools+=("shfmt (apt-get install shfmt or go install mvdan.cc/sh/v3/cmd/shfmt@latest)")
-fi
-
-# Determine markdownlint command
-MARKDOWNLINT=""
-if command -v markdownlint-cli2 &>/dev/null; then
-    MARKDOWNLINT="markdownlint-cli2"
-elif command -v npx &>/dev/null; then
-    MARKDOWNLINT="npx --yes markdownlint-cli2"
-else
-    missing_tools+=("markdownlint-cli2 (npm install -g markdownlint-cli2)")
-fi
-
-if [ ${#missing_tools[@]} -gt 0 ]; then
-    echo "Missing tools:" >&2
-    for tool in "${missing_tools[@]}"; do
-        echo "  - $tool" >&2
-    done
-    echo "" >&2
-    echo "Install missing tools before running lint." >&2
-    exit 1
-fi
-
-# --- Find files ---
+# Find shell scripts
 mapfile -t SH_FILES < <(find . -type f -name '*.sh' -not -path './.git/*' -not -path './node_modules/*' | sort)
 
-FAILED=false
+FAILURES=()
+
+run_check() {
+    local name="$1"
+    shift
+    echo ""
+    echo "--- $name ---"
+    if ! "$@"; then
+        FAILURES+=("$name")
+    fi
+}
 
 # --- Bash: shellcheck ---
-echo "=== Bash: shellcheck ==="
 if [ ${#SH_FILES[@]} -gt 0 ]; then
-    shellcheck --external-sources "${SH_FILES[@]}" || FAILED=true
-else
-    echo "  No .sh files found."
-fi
+    run_check "shellcheck" shellcheck --external-sources "${SH_FILES[@]}"
 
-# --- Bash: shfmt ---
-echo ""
-echo "=== Bash: shfmt ==="
-if [ ${#SH_FILES[@]} -gt 0 ]; then
     if $FIX_MODE; then
-        shfmt -w -i 4 -ci -bn "${SH_FILES[@]}"
-        echo "  Formatted."
+        run_check "shfmt (format)" shfmt -w -i 4 -ci -bn "${SH_FILES[@]}"
     else
-        shfmt -d -i 4 -ci -bn "${SH_FILES[@]}" || FAILED=true
+        run_check "shfmt (check)" shfmt -d -i 4 -ci -bn "${SH_FILES[@]}"
     fi
-else
-    echo "  No .sh files found."
 fi
 
 # --- Markdown: markdownlint ---
-echo ""
-echo "=== Markdown: markdownlint ==="
 if $FIX_MODE; then
-    $MARKDOWNLINT --fix "**/*.md" "#node_modules" "#.git" || FAILED=true
+    run_check "markdownlint" markdownlint-cli2 --fix "**/*.md" "#node_modules" "#.git"
 else
-    $MARKDOWNLINT "**/*.md" "#node_modules" "#.git" || FAILED=true
+    run_check "markdownlint" markdownlint-cli2 "**/*.md" "#node_modules" "#.git"
 fi
 
-# --- Result ---
-echo ""
-if $FAILED; then
-    echo "Linting failed." >&2
-    exit 1
+# --- Formatting: prettier ---
+if $FIX_MODE; then
+    run_check "prettier" prettier --write --ignore-unknown .
 else
-    echo "All checks passed."
+    run_check "prettier" prettier --check --ignore-unknown .
 fi
+
+# --- Summary ---
+echo ""
+echo "--- Summary ---"
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "Failed: ${FAILURES[*]}" >&2
+    exit 1
+fi
+echo "All checks passed."
