@@ -7,15 +7,14 @@ Infrastructure bootstrapping scripts for Proxmox home lab. Creates VM templates 
 **Run these commands on your Proxmox host** (SSH into it):
 
 ```bash
-# 1. Install prerequisites
-apt-get install libguestfs-tools
-# Install 1Password CLI: https://1password.com/downloads/command-line/
+# 1. Install 1Password CLI: https://1password.com/downloads/command-line/
 
-# 2. Authenticate 1Password
+# 2. Authenticate
 op signin
 # OR export OP_SERVICE_ACCOUNT_TOKEN=...  (headless/CI)
 
 # 3. Build template (downloads latest from GitHub, no clone needed)
+#    Will prompt to install libguestfs-tools automatically.
 bash <(curl -fsSL https://raw.githubusercontent.com/dbensmith/home-ops-bootstrap/main/build-ubuntu-resolute-template)
 ```
 

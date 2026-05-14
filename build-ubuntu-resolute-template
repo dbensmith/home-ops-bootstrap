@@ -11,9 +11,7 @@ set -euo pipefail
 #   2. LOCAL (cloned repo) — uses local proxmox/ files:
 #        ./build-ubuntu-resolute-template
 #
-# Prerequisites on Proxmox host:
-#   apt-get install libguestfs-tools
-#   1Password CLI: https://1password.com/downloads/command-line/
+# 1Password CLI: https://1password.com/downloads/command-line/
 #
 # 1Password auth (one required):
 #   op signin                              # interactive
@@ -53,6 +51,15 @@ else
 fi
 
 # --- Pre-flight checks ---
+if ! command -v virt-customize &>/dev/null; then
+    echo "libguestfs-tools (virt-customize) not found — required to customize the cloud image."
+    read -r -p "Install libguestfs-tools? [Y/n] " REPLY
+    case "${REPLY:-Y}" in
+        y|Y|yes|YES|"") apt-get update && apt-get install -y libguestfs-tools ;;
+        *) echo "Aborting. Install manually: apt-get install libguestfs-tools" >&2; exit 1 ;;
+    esac
+fi
+
 if ! command -v op &>/dev/null; then
     echo "Error: 1Password CLI ('op') is not installed or not in PATH." >&2
     echo "Install from: https://1password.com/downloads/command-line/" >&2
