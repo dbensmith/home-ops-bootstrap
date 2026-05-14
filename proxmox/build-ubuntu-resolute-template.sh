@@ -130,7 +130,8 @@ echo "=== Starting template build for: $TEMPL_NAME (VMID: $VMID) ==="
 # --- Download and Prepare Image ---
 echo "[1/7] Downloading $OSNAME cloud image..."
 cd "$WORK_DIR"
-wget -N "$SRC_URL"
+# Download only if newer (curl -z = wget -N)
+curl -L -# -z "$SRC_IMG" -o "$SRC_IMG" "$SRC_URL"
 
 echo "       Converting image to qcow2..."
 cp "$SRC_IMG" "$IMG_NAME"
