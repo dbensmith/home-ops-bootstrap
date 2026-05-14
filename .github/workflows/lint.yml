@@ -20,10 +20,12 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
       - name: Install shfmt
-        run: |
-          go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+        run: go install mvdan.cc/sh/v3/cmd/shfmt@v3.10.0
 
       - name: Run lint
         run: npm run lint
