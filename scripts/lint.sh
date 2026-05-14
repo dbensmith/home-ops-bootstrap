@@ -4,8 +4,6 @@ set -euo pipefail
 # Run all linters and formatters. Aggregates results — runs everything
 # even if earlier steps fail, exits non-zero if any failed.
 #
-# Mirrors desktop-environment's bin/Invoke-Linters.ps1 pattern.
-#
 # Usage: ./scripts/lint.sh         # Check mode
 #        ./scripts/lint.sh --fix   # Auto-fix mode
 
@@ -14,8 +12,11 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-# Prepend node_modules/.bin to PATH so npm-installed tools are found
-if [ -d "node_modules/.bin" ]; then
+# Prepend project-local tool directories to PATH
+if [ -d "$REPO_ROOT/.bin" ]; then
+    export PATH="$REPO_ROOT/.bin:$PATH"
+fi
+if [ -d "$REPO_ROOT/node_modules/.bin" ]; then
     export PATH="$REPO_ROOT/node_modules/.bin:$PATH"
 fi
 
@@ -24,8 +25,8 @@ if [ "${1:-}" = "--fix" ]; then
     FIX_MODE=true
 fi
 
-# Find shell scripts
-mapfile -t SH_FILES < <(find . -type f -name '*.sh' -not -path './.git/*' -not -path './node_modules/*' | sort)
+# Find shell scripts: .sh files + the entry point (no extension)
+mapfile -t SH_FILES < <(find . -type f \( -name '*.sh' -o -name 'build-ubuntu-resolute-template' \) -not -path './.git/*' -not -path './node_modules/*' -not -path './.bin/*' | sort)
 
 FAILURES=()
 
@@ -52,9 +53,9 @@ fi
 
 # --- Markdown: markdownlint ---
 if $FIX_MODE; then
-    run_check "markdownlint" markdownlint-cli2 --fix "**/*.md" "#node_modules" "#.git"
+    run_check "markdownlint" markdownlint-cli2 --fix "**/*.md" "#node_modules" "#.git" "#.bin"
 else
-    run_check "markdownlint" markdownlint-cli2 "**/*.md" "#node_modules" "#.git"
+    run_check "markdownlint" markdownlint-cli2 "**/*.md" "#node_modules" "#.git" "#.bin"
 fi
 
 # --- Formatting: prettier ---

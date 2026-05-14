@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-# Verify linting prerequisites. Mirrors desktop-environment's bin/Invoke-LintDoctor.ps1 pattern.
+# Verify linting prerequisites. Cross-platform — no apt references.
 #
 # Usage: ./scripts/lint-doctor.sh
 #        npm run lint:doctor
@@ -44,8 +44,8 @@ check_cmd "npm"      "bundled with Node.js"
 
 echo ""
 
-check_cmd "shellcheck" "npm run setup (or https://github.com/koalaman/shellcheck)"
-check_cmd "shfmt"       "npm run setup (or go install mvdan.cc/sh/v3/cmd/shfmt@latest)"
+check_cmd ".bin/shellcheck" "npm run setup (or https://github.com/koalaman/shellcheck)"
+check_cmd ".bin/shfmt"       "npm run setup (or go install mvdan.cc/sh/v3/cmd/shfmt@latest)"
 
 echo ""
 

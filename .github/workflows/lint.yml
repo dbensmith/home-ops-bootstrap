@@ -23,14 +23,17 @@ jobs:
       - name: Install shellcheck
         run: |
           SHELLCHECK_VERSION=0.10.0
+          mkdir -p .bin
           curl -sSfL "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" | tar -xJ
-          sudo install -m 755 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" /usr/local/bin/
+          install -m 755 "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" .bin/
+          rm -rf "shellcheck-v${SHELLCHECK_VERSION}"
 
       - name: Install shfmt
         run: |
           SHFMT_VERSION=3.10.0
-          sudo curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o /usr/local/bin/shfmt
-          sudo chmod +x /usr/local/bin/shfmt
+          mkdir -p .bin
+          curl -sSfL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" -o .bin/shfmt
+          chmod +x .bin/shfmt
 
       - name: Run lint
         run: npm run lint
