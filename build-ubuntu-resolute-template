@@ -28,6 +28,14 @@ BASE_URL="https://raw.githubusercontent.com/$REPO/$BRANCH"
 # --- Find script files: local checkout or remote download ---
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || pwd)"
 
+# Collect dirs to clean up on exit (single trap at end)
+_CLEANUP_DIRS=()
+_cleanup() {
+    for d in "${_CLEANUP_DIRS[@]}"; do
+        [[ -n "$d" ]] && rm -rf "$d"
+    done
+}
+
 if [ -f "$__dir/proxmox/build-ubuntu-resolute-template.sh" ]; then
     # Local mode — use files from repo checkout
     TPL_FILE="$__dir/proxmox/build-ubuntu-resolute-template.env.tpl"
@@ -35,7 +43,7 @@ if [ -f "$__dir/proxmox/build-ubuntu-resolute-template.sh" ]; then
 else
     # Remote mode — download latest from GitHub
     WORKDIR=$(mktemp -d)
-    trap 'rm -rf "$WORKDIR"' EXIT
+    _CLEANUP_DIRS+=("$WORKDIR")
 
     echo "Downloading template builder from $REPO..."
     curl -fsSL -o "$WORKDIR/build-ubuntu-resolute-template.sh" \
@@ -59,6 +67,33 @@ if ! command -v virt-customize &>/dev/null; then
         *) echo "Aborting. Install manually: apt-get install libguestfs-tools" >&2; exit 1 ;;
     esac
 fi
+
+# virt-customize creates a temporary appliance for package operations.
+# This can consume 2GB+ inside LIBGUESTFS_TMPDIR (defaults to /tmp).
+# On Proxmox, /tmp is often a tmpfs with limited size — use /var/tmp instead.
+_GUESTFS_TMP="/var/tmp/guestfs.${$}"
+if [[ "$(stat -f -c '%T' /tmp 2>/dev/null)" == "tmpfs" ]]; then
+    _tmp_avail=$(stat -f --format='%a*%S' /tmp 2>/dev/null | bc 2>/dev/null || echo "0")
+    _var_avail=$(stat -f --format='%a*%S' /var/tmp 2>/dev/null | bc 2>/dev/null || echo "0")
+    if [[ "$_tmp_avail" -lt 2147483648 ]] && [[ "$_var_avail" -gt "$_tmp_avail" ]]; then
+        echo "/tmp is tmpfs with limited space — using /var/tmp for virt-customize appliance."
+        mkdir -p "$_GUESTFS_TMP"
+        export LIBGUESTFS_TMPDIR="$_GUESTFS_TMP"
+        _CLEANUP_DIRS+=("$_GUESTFS_TMP")
+    fi
+fi
+
+# Check that target temp dir has enough free space (≥3GB for image + upgrade)
+_work_tmp="${LIBGUESTFS_TMPDIR:-/tmp}"
+_avail_bytes=$(stat -f --format='%a*%S' "$_work_tmp" 2>/dev/null | bc 2>/dev/null || echo "0")
+if [[ "$_avail_bytes" -lt 3221225472 ]]; then
+    echo "Warning: $_work_tmp has <3GB free (virt-customize may fail)."
+    echo "  Set LIBGUESTFS_TMPDIR=/path/to/larger/disk before running."
+fi
+
+export LIBGUESTFS_TMPDIR="${LIBGUESTFS_TMPDIR:-}"
+
+trap _cleanup EXIT
 
 if ! command -v op &>/dev/null; then
     echo "Error: 1Password CLI ('op') is not installed or not in PATH." >&2
