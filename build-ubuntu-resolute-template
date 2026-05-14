@@ -1,18 +1,56 @@
 #!/bin/bash
 set -euo pipefail
 
-# 1Password wrapper for build-ubuntu-resolute-template.sh.
-# Resolves secrets via op run --env-file, then launches the builder.
+# Proxmox Ubuntu Resolute template builder — remote-capable wrapper.
 #
-# Usage: ./build-ubuntu-resolute-template
+# Two modes:
 #
-# Prerequisites:
-#   - op CLI installed and authenticated (op signin OR OP_SERVICE_ACCOUNT_TOKEN)
+#   1. REMOTE (curl pipe) — downloads latest files, no clone needed:
+#        bash <(curl -fsSL https://raw.githubusercontent.com/dbensmith/home-ops-bootstrap/main/build-ubuntu-resolute-template)
+#
+#   2. LOCAL (cloned repo) — uses local proxmox/ files:
+#        ./build-ubuntu-resolute-template
+#
+# Prerequisites on Proxmox host:
+#   apt-get install libguestfs-tools
+#   1Password CLI: https://1password.com/downloads/command-line/
+#
+# 1Password auth (one required):
+#   op signin                              # interactive
+#   export OP_SERVICE_ACCOUNT_TOKEN=...    # headless/CI
+#
+# Your .env.tpl needs op:// references for SSHKEY, NS1, NS2, SEARCHDOMAIN.
+# Fork the repo and update proxmox/build-ubuntu-resolute-template.env.tpl
+# with your own 1Password vault items.
 
-__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="dbensmith/home-ops-bootstrap"
+BRANCH="main"
+BASE_URL="https://raw.githubusercontent.com/$REPO/$BRANCH"
 
-TPL_FILE="$__dir/proxmox/build-ubuntu-resolute-template.env.tpl"
-SCRIPT_FILE="$__dir/proxmox/build-ubuntu-resolute-template.sh"
+# --- Find script files: local checkout or remote download ---
+__dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || pwd)"
+
+if [ -f "$__dir/proxmox/build-ubuntu-resolute-template.sh" ]; then
+    # Local mode — use files from repo checkout
+    TPL_FILE="$__dir/proxmox/build-ubuntu-resolute-template.env.tpl"
+    SCRIPT_FILE="$__dir/proxmox/build-ubuntu-resolute-template.sh"
+else
+    # Remote mode — download latest from GitHub
+    WORKDIR=$(mktemp -d)
+    trap 'rm -rf "$WORKDIR"' EXIT
+
+    echo "Downloading template builder from $REPO..."
+    curl -fsSL -o "$WORKDIR/build-ubuntu-resolute-template.sh" \
+        "$BASE_URL/proxmox/build-ubuntu-resolute-template.sh"
+    curl -fsSL -o "$WORKDIR/sysprep-ubuntu-resolute-template.sh" \
+        "$BASE_URL/proxmox/sysprep-ubuntu-resolute-template.sh"
+    curl -fsSL -o "$WORKDIR/build-ubuntu-resolute-template.env.tpl" \
+        "$BASE_URL/proxmox/build-ubuntu-resolute-template.env.tpl"
+
+    chmod +x "$WORKDIR"/*.sh
+    TPL_FILE="$WORKDIR/build-ubuntu-resolute-template.env.tpl"
+    SCRIPT_FILE="$WORKDIR/build-ubuntu-resolute-template.sh"
+fi
 
 # --- Pre-flight checks ---
 if ! command -v op &>/dev/null; then
