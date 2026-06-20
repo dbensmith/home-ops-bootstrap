@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-super-linter-cache-
 
       - name: Super-linter
-        uses: super-linter/super-linter@v8.6.0
+        uses: super-linter/super-linter@v8.7.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLE_GITHUB_ACTIONS_STEP_SUMMARY: true
