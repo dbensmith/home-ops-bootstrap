@@ -38,7 +38,7 @@ jobs:
           grep -vE '^\s*(#|$)' .github/super-linter.env >> "$GITHUB_ENV"
 
       - name: Restore Super-Linter caches
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/_github_home/.cache
           key: ${{ runner.os }}-super-linter-cache-${{ hashFiles('.github/super-linter.env', '.github/workflows/lint.yml') }}
